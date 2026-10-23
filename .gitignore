@@ -16,3 +16,5 @@
 /Assets/ZS/Resources/ZSAudio/
 /Assets/ZS/Resources/ZSAudio.meta
 /Assets/ZS/Generated/
+/Assets/ZS/Scenes/*.unity
+/Assets/ZS/Scenes/*.unity.meta
