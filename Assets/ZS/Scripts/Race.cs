@@ -29,6 +29,7 @@ namespace ZS
 
         public void Setup()
         {
+            Env = Session.Track;
             track = Track.Load(Env, Laps);
             var right = Vector3.Cross(Vector3.up, track.StartDir).normalized;
             for (int i = 0; i <= Bots; i++)
@@ -37,12 +38,19 @@ namespace ZS
                 var pos = track.StartPos - track.StartDir * (6f + row * 7f) + right * (col == 0 ? -3f : 3f);
                 var go = new GameObject(i == 0 ? "Player" : $"Bot{i}");
                 go.transform.SetPositionAndRotation(pos + Vector3.up, Quaternion.LookRotation(track.StartDir));
+                int visual = -1;
                 if (KartVisuals != null && KartVisuals.Length > 0)
-                    Instantiate(KartVisuals[i % KartVisuals.Length], go.transform, false);
+                {
+                    // The player drives the lobby's pick; bots take the other karts in order.
+                    int pick = Mathf.Clamp(Session.Kart, 0, KartVisuals.Length - 1);
+                    visual = i == 0 ? pick : (pick + i) % KartVisuals.Length;
+                    Instantiate(KartVisuals[visual], go.transform, false);
+                }
                 var k = go.AddComponent<Kart>();
                 k.P = KartParams.Load();
                 k.Track = track;
                 k.IsPlayer = i == 0;
+                k.Visual = visual;
                 k.Gravity = track.Gravity;
                 k.Progress = k.LastProgress = track.Progress(go.transform.position, ref k.TrackHint);
                 Karts.Add(k);
@@ -66,6 +74,10 @@ namespace ZS
             if (p == Phase.Countdown) ZsAudio.Play(ZsAudio.Countdown);
             if (p == Phase.Finished)
             {
+                Session.Results.Clear();
+                foreach (var k in Standings())
+                    Session.Results.Add(new Session.Result { Name = k.name, Kart = Mathf.Max(0, k.Visual), Time = k.FinishTime });
+                if (Application.isPlaying) Invoke(nameof(ToPodium), 4f);
                 ZsAudio.Play(Standings().IndexOf(Player) == 0 ? ZsAudio.Win : ZsAudio.Lose);
                 ZsAudio.Play(ZsAudio.Settle, 0.8f);
             }
@@ -73,6 +85,8 @@ namespace ZS
         }
 
         void Update() => Tick(Time.deltaTime);
+
+        void ToPodium() => UnityEngine.SceneManagement.SceneManager.LoadScene(Scenes.Podium);
 
         public void Tick(float dt)
         {

@@ -8,7 +8,13 @@ namespace ZS
     public class KartParams
     {
         public AnimationCurve DrivingMaxAngSpeed;  // [data CarSteer.m_drivingMaxAngSpeedCurve] deg/s by speed/top (0.24..0.95)
-        public AnimationCurve PowerChain;          // [data CarEngine.m_powerChainFactorCurve] by percent of top speed (50..90)
+        public AnimationCurve BasePowerChain;      // [data CarEngine.m_basePowerChainFactor] torque scale by speed/top (1.0 -> 0.2)
+        public AnimationCurve DriftPowerChain;     // [data CarEngine.m_powerChainFactorCurve] while drifting, by |drift angle| (50 -> 1, 90 -> 0.05)
+        public AnimationCurve CompensatePower;     // [data CarTurbo.m_compensatePowerFactorCurve] nitro floor while drifting, x read as drift angle [reconstructed]
+        public AnimationCurve WallTangKeep;        // [data CarCollision.m_fenceCollisionDumpTangVelCoef] speed kept along a wall, by km/h
+        public AnimationCurve FrontWallTangKeep;   // [data CarCollision.m_frontFenceCollisionDumpTangVelCoef] same for a head-on hit
+        public AnimationCurve WallBounceKmh;       // [data CarCollision.m_fenceCollisionBounceKMPH] bounce off the wall, by km/h
+        public AnimationCurve WallPowerDump;       // [data CarCollision.m_frontFenceCollisionPowerDumpCurve] power after a head-on hit, by seconds
         public AnimationCurve FallBehindTopVel;    // [data CarEngine.FallBehindCompeTopVelCurve] km/h by gap (laps)
         public AnimationCurve SlidingVelDirLerp;   // [data CarDrift.m_slidingVelocityDirLerpCurve] x read as drift angle [reconstructed]
         public float MiniBoostMinVDAngle = 35f;    // [data CarTurbo.m_miniBoostMinVDAngle]
@@ -23,12 +29,14 @@ namespace ZS
         public float DriftDrag = 0.25f;            // [reconstructed]
         public float DriftYawScale = 1.6f;         // [reconstructed]
         public float GripVelDirLerp = 12f;         // [reconstructed]
-        public float NitroChargePerSecond = 0.45f; // [reconstructed]
+        public float NitroFull = 1000f;            // gauge units for one nitro (SingleNitrogenCollect)
+        public float NitroMaxPerFrame = 100f;      // gain cap per 60 Hz physics frame (SingleNitrogenCollect.CalcCollectPower)
+        public float NitroPerKmhLost = 9f;         // [reconstructed] per-kart fGatherNitroSpeed is server data; ~4 drifts per nitro
+        public float NitroFloorPerSecond = 120f;   // [reconstructed] per-kart fCompensatePowerFactor, times CompensatePower
         public float NitroDuration = 2.5f;         // [reconstructed]
         public float MiniBoostDuration = 0.6f;     // [reconstructed]
         public float BoostExtraKmh = 45f;          // [reconstructed]
         public float BoostAccel = 25f;             // [reconstructed]
-        public float WallSpeedLoss = 0.6f;         // [reconstructed]
 
         public static KartParams Load(string set = "00")
         {
@@ -38,7 +46,14 @@ namespace ZS
             var drift = ZsData.Fields("carparams", "CarDrift_" + set);
             var turbo = ZsData.Fields("carparams", "CarTurbo_" + set);
             p.DrivingMaxAngSpeed = ZsData.Curve(steer["m_drivingMaxAngSpeedCurve"]);
-            p.PowerChain = ZsData.Curve(engine["m_powerChainFactorCurve"]);
+            var wall = ZsData.Fields("carparams", "CarCollision_" + set);
+            p.BasePowerChain = ZsData.Curve(engine["m_basePowerChainFactor"]);
+            p.DriftPowerChain = ZsData.Curve(engine["m_powerChainFactorCurve"]);
+            p.CompensatePower = ZsData.Curve(turbo["m_compensatePowerFactorCurve"]);
+            p.WallTangKeep = ZsData.Curve(wall["m_fenceCollisionDumpTangVelCoef"]);
+            p.FrontWallTangKeep = ZsData.Curve(wall["m_frontFenceCollisionDumpTangVelCoef"]);
+            p.WallBounceKmh = ZsData.Curve(wall["m_fenceCollisionBounceKMPH"]);
+            p.WallPowerDump = ZsData.Curve(wall["m_frontFenceCollisionPowerDumpCurve"]);
             p.SlidingVelDirLerp = ZsData.Curve(drift["m_slidingVelocityDirLerpCurve"]);
             p.FallBehindTopVel = ZsData.Curve(engine["FallBehindCompeTopVelCurve"]);
             p.MiniBoostMinVDAngle = Json.F(turbo["m_miniBoostMinVDAngle"]);

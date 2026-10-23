@@ -18,11 +18,12 @@ namespace ZS
         public KartInput In;
         public Track Track;
         public bool IsPlayer;
+        public int Visual = -1;        // index into Race.KartVisuals
         public float Gravity = 63.75f;
 
         public float Speed;            // m/s along velocity
         public Vector3 Velocity;
-        public float NitroGauge;       // 0..1, fills while drifting
+        public float NitroGauge;       // 0..P.NitroFull, fills from speed lost while drifting
         public int NitroSlots;         // 0..2
         public float BoostTime;        // seconds of boost left
         public float CatchUpKmh;       // extra top speed for a kart behind the leader (bots only)
@@ -35,7 +36,7 @@ namespace ZS
         public int Lap = -1;           // first crossing of the start line starts lap 0
         public float FinishTime = -1;
 
-        float driftHeld, miniWindow;
+        float driftHeld, miniWindow, lastKmh, sinceFrontHit = 99f;
 
         void FixedUpdate() => Step(Time.fixedDeltaTime);
 
@@ -72,10 +73,14 @@ namespace ZS
             DriftAngle = Vector3.Angle(vdir, heading);
             if (Drifting)
             {
+                // Charged by the speed the drift costs, with a floor while the drift holds; capped per 60 Hz frame.
                 driftHeld += dt;
-                NitroGauge += dt * P.NitroChargePerSecond * Mathf.Clamp01(DriftAngle / P.MiniBoostMinVDAngle) * Mathf.Clamp01(kmh / 100f);
-                if (NitroGauge >= 1f) { NitroGauge = 0; NitroSlots = Mathf.Min(2, NitroSlots + 1); }
+                float gain = Mathf.Max(0f, lastKmh - kmh) * P.NitroPerKmhLost;
+                gain = Mathf.Max(gain, P.NitroFloorPerSecond * P.CompensatePower.Evaluate(DriftAngle) * dt);
+                NitroGauge += Mathf.Min(gain, P.NitroMaxPerFrame * dt * 60f);
+                if (NitroGauge >= P.NitroFull) { NitroGauge = 0; NitroSlots = Mathf.Min(2, NitroSlots + 1); }
             }
+            lastKmh = kmh;
 
             // Nitro: a full slot gives a long boost; the small post-drift boost is shorter.
             miniWindow -= dt;
@@ -98,8 +103,12 @@ namespace ZS
 
             // Speed: engine power falls off toward top speed; drift and braking cost speed.
             float top = P.TopKmh + CatchUpKmh + (BoostTime > 0 ? P.BoostExtraKmh : 0f);
-            // powerChain curve x is percent of top speed (50 -> 1, 90 -> 0.05); full power below 50%.
-            float accel = In.Throttle >= 0 ? In.Throttle * P.Accel * P.PowerChain.Evaluate(100f * kmh / top) : In.Throttle * P.Brake;
+            // Torque by speed ratio; a drift past 50 degrees cuts it; a head-on wall hit dumps it for a moment.
+            sinceFrontHit += dt;
+            float power = P.BasePowerChain.Evaluate(Mathf.Clamp01(kmh / top))
+                          * (Drifting ? P.DriftPowerChain.Evaluate(DriftAngle) : 1f)
+                          * P.WallPowerDump.Evaluate(sinceFrontHit);
+            float accel = In.Throttle >= 0 ? In.Throttle * P.Accel * power : In.Throttle * P.Brake;
             if (BoostTime > 0) accel += P.BoostAccel;
             Speed += accel * dt;
             Speed -= (Drifting ? P.DriftDrag : P.Drag) * Speed * dt;
@@ -111,10 +120,13 @@ namespace ZS
             if (Physics.SphereCast(transform.position + transform.up * 0.7f, 0.6f, step.normalized, out var wall, step.magnitude, ~0, QueryTriggerInteraction.Ignore)
                 && Vector3.Dot(wall.normal, transform.up) < 0.5f)
             {
-                // Wall: slide along it and lose speed, more for a head-on hit.
-                float head = Mathf.Abs(Vector3.Dot(step.normalized, wall.normal));
-                Speed *= 1f - P.WallSpeedLoss * head;
-                step = Vector3.ProjectOnPlane(step, wall.normal);
+                // Wall: keep a speed-dependent share along it (less for a head-on hit) and bounce off.
+                // The original classes the hit by angle (tail 85, side 105, head 150 degrees); head-on here
+                // means the wall faces the kart within 30 degrees [reconstructed].
+                bool front = Vector3.Angle(-wall.normal, step.normalized) < 30f;
+                Speed *= (front ? P.FrontWallTangKeep : P.WallTangKeep).Evaluate(kmh);
+                step = Vector3.ProjectOnPlane(step, wall.normal) + wall.normal * P.WallBounceKmh.Evaluate(kmh) / 3.6f * dt;
+                if (front) sinceFrontHit = 0;
                 Drifting = false;
             }
             transform.position += step;

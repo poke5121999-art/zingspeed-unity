@@ -1,5 +1,5 @@
 kind	subject	detail
-assets-copied	files	24409 (closure of 349 roots)
+assets-copied	files	24407 (closure of 349 roots)
 assembly-to-package	Autodesk.Fbx	com.autodesk.fbx 5.1.3: 113/115 scripts remapped
 assembly-to-package	Cinemachine	com.unity.cinemachine 2.10.7: 69/77 scripts remapped
 assembly-to-package	Unity.Animation.Rigging	com.unity.animation.rigging 1.4.1: 21/46 scripts remapped
@@ -18,6 +18,7 @@ assembly-to-package	Unity.TextMeshPro	com.unity.ugui 2.0.0: 41/59 scripts remapp
 assembly-to-package	Unity.Timeline	com.unity.timeline 1.8.12: 48/70 scripts remapped
 assembly-to-package	UnityEngine.TestRunner	com.unity.test-framework 1.6.0: 87/110 scripts remapped
 assembly-to-package	UnityEngine.UI	com.unity.ugui 2.0.0: 66/85 scripts remapped
+assembly-to-package	Unity.TextMeshPro.Tests	com.unity.ugui 2.0.0: 0/0 scripts remapped
 script-not-in-package	Autodesk.Fbx	FbxDoubleTemplates
 script-not-in-package	Autodesk.Fbx	EFbxType
 script-not-in-package	Cinemachine	ICinemachineCamera
@@ -306,3 +307,73 @@ package-added	com.unity.ugui	2.0.0
 package-added	com.unity.timeline	1.8.12
 package-added	com.unity.test-framework	1.6.0
 guid-remap	files	0
+case-clash-moved	Scripts/NssMain/IbwHomeVillaDiyDataComp.cs	path differed only in letter case
+case-clash-moved	Scripts/NssMain/QteModel.cs	path differed only in letter case
+case-clash-moved	Scripts/NssMain/QteSystem.cs	path differed only in letter case
+case-clash-moved	Scripts/NssMain/QteView.cs	path differed only in letter case
+case-clash-moved	Scripts/NssPlugins/Gcloud	path differed only in letter case
+stub-fixed	Scripts/QSM.Rendering.PostProcessing/PostProcess.ConsoleVariable.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/SkyzoneVolumeSuperSystem.MultiProfile.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/LightingEnvMgr.LowLevelUnsafe.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/ThroneAvatarAnimCmp.RandomAnimData.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/LightingEnvMgr.Lightmap.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/1.Example.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/ArtLevelSettings.Obsolete.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/SplatManagerComp.Disappear.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/HLODSController.Streaming.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/错误用法.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/2.OldUsage.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/SplatManagerComp.Draw.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/LightingEnvOverrideProfile.gen.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/4.1.ExampleModule.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/4.1.AsyncTaskExample.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/2.OldUsage2.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/SplatManagerComp.DrawDisappear.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/SplatManagerComp.Detect.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/NssPVS.Editor.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/4.2.LazyJobHugeTaskExample.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/3.Error.ExampleModule.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/4.2.ExampleComponent.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/Item3DPreviewSystem.DisplayHelper.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/LightingEnvMgr.ReflectionProbe.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/:PanelSystem<Item3DPreviewView>_IItem3DPreviewSystem/Item3DPreviewParamHelper.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/com/tencent/pandora/:LuaObject/Timer.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/NssUI/UIWidgetWrapper.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/NssUI/UILabelWrapper.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssMain/NssUI/UIEventListenerWrapper.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssPlugins/ApolloTalker+Advance.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssPlugins/FFmpeg.avutil.g.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssPlugins/FFmpeg.avformat.g.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssPlugins/FFmpeg.swresample.g.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssPlugins/FFmpeg.swscale.g.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssPlugins/FFmpeg.avdevice.g.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssPlugins/FFmpeg.avcodec.g.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssPlugins/FFmpeg.avfilter.g.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssPlugins/GCloud/LogPluginSample.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/NssPlugins/GCloud/LogPluginGCloud.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.Environment.VolumeFramework/AdditionalVolumeData.Authoring.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.RenderPipeline.Runtime/QSMRenderPipeline.RenderInjection.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.RenderPipeline.Runtime/QSMRenderPipeline.ScreenCapture.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.RenderPipeline.Runtime/QSMRenderPipeline.Legacy.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.RenderPipeline.Runtime/SeparableSSS.ShadingBlurPass.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.RenderPipeline.Runtime/SeparableSSS.EarlyBasePass.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.RenderPipeline.Runtime/SeparableSSS.Setup.DownSamplePass.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.RenderPipeline.Runtime/SeparableSSS.DiffusionProfile.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.RenderPipeline.Runtime/RenderingLayer.gen.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.RenderPipeline.Runtime/SeparableSSS.CombinePass.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.RenderPipeline.Runtime/QSMRenderPipeline.MotionPredict.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.RenderPipeline.Runtime/SeparableSSS.BasePassSetupPass.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.RenderPipeline.Runtime/SeparableSSS.Setup.StencilTestCopyPass.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.RenderPipeline.Runtime/QSMRenderPipeline.ConsoleVariable.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.RenderPipeline.Runtime/DrawObjectsPass.WithGrabPass.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.RenderPipeline.Runtime/RendererLayer.gen.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.RenderPipeline.Runtime/QSMRenderPipeline.Constants.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/Sirenix.OdinInspector.Editor/Sirenix/OdinInspector/Editor/EmittedScriptableObject`1.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/Sirenix.OdinInspector.Editor/Sirenix/OdinInspector/Editor/EmittedMonoBehaviour`1.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/Sirenix.OdinInspector.Editor/Sirenix/OdinInspector/Editor/Internal/ProjectSettingsGlobalConfig`1.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/Sirenix.OdinInspector.Editor/Sirenix/OdinInspector/Editor/Internal/SessionSingletonSO`1.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.SubScene/Mathematics.AABB.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.SubScene/Mathematics.Hash128.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/QSM.SubScene/Mathematics.MinMaxAABB.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/TASceneMdl.Authoring/OverridePropertyAuthoringData.Obsolete.cs	removed (invalid class or namespace name, unreferenced)
+stub-fixed	Scripts/Sirenix.Utilities/Sirenix/Utilities/GlobalConfig`1.cs	removed (invalid class or namespace name, unreferenced)
