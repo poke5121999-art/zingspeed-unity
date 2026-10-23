@@ -24,3 +24,7 @@ DATA="$HERE/Assets/ZS/Resources/ZSData"
 rm -rf "$DATA"
 "$KIT/.venv/bin/python" -m udk.sojson "$OUT/assets/ExportedProject" "$DATA/e_11citynew" 'environments/e_11citynew/model/pick/' --flat
 "$KIT/.venv/bin/python" -m udk.sojson "$OUT/assets/ExportedProject" "$DATA/carparams" 'vehicles/carparams/' --flat
+# Original sounds the race uses (see Assets/ZS/Scripts/ZsAudio.cs for which event plays when).
+"$KIT/.venv/bin/python" -m udk.audiopick "$OUT" "$HERE/Assets/ZS/Resources/ZSAudio" \
+  '^Play_Mode_Spray_UI_Countdown$' '^Play_Mode_RongLuTaoTai_SFX_(Nitro|BoostSurge)$' '^Play_Mode_GoldGrab_UI_Win$' \
+  '^Play_Mode_Dajiangsai_UI_Loser$' '^Play_UI_SaiJiHeYue_JieSuan$' '^Play_Hall_(Home_enter|PutCar|SEStart)$'

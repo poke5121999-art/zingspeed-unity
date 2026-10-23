@@ -17,6 +17,7 @@ namespace ZS
         public KartParams P;
         public KartInput In;
         public Track Track;
+        public bool IsPlayer;
         public float Gravity = 63.75f;
 
         public float Speed;            // m/s along velocity
@@ -80,8 +81,18 @@ namespace ZS
             miniWindow -= dt;
             if (In.Nitro && BoostTime <= 0)
             {
-                if (NitroSlots > 0) { NitroSlots--; BoostTime = P.NitroDuration; }
-                else if (miniWindow > 0) { BoostTime = P.MiniBoostDuration; miniWindow = 0; }
+                if (NitroSlots > 0)
+                {
+                    NitroSlots--;
+                    BoostTime = P.NitroDuration;
+                    if (IsPlayer) ZsAudio.Play(ZsAudio.Nitro);
+                }
+                else if (miniWindow > 0)
+                {
+                    BoostTime = P.MiniBoostDuration;
+                    miniWindow = 0;
+                    if (IsPlayer) ZsAudio.Play(ZsAudio.MiniBoost);
+                }
             }
             BoostTime -= dt;
 

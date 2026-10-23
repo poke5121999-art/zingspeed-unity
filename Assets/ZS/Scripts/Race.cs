@@ -42,6 +42,7 @@ namespace ZS
                 var k = go.AddComponent<Kart>();
                 k.P = KartParams.Load();
                 k.Track = track;
+                k.IsPlayer = i == 0;
                 k.Gravity = track.Gravity;
                 k.Progress = k.LastProgress = track.Progress(go.transform.position, ref k.TrackHint);
                 Karts.Add(k);
@@ -62,6 +63,12 @@ namespace ZS
             State = p;
             Clock = 0;
             foreach (var k in Karts) k.enabled = p != Phase.Countdown;
+            if (p == Phase.Countdown) ZsAudio.Play(ZsAudio.Countdown);
+            if (p == Phase.Finished)
+            {
+                ZsAudio.Play(Standings().IndexOf(Player) == 0 ? ZsAudio.Win : ZsAudio.Lose);
+                ZsAudio.Play(ZsAudio.Settle, 0.8f);
+            }
             OnPhase?.Invoke(p);
         }
 
