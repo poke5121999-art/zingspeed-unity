@@ -1,0 +1,13 @@
+# Game content is regenerated from your own copy of the game by tools/rebuild.sh (unity-decode-kit);
+# it is not redistributed here. Only the reconstruction code under Assets/ZS is versioned.
+/Assets/*
+!/Assets/ZS/
+!/Assets/ZS.meta
+/Library/
+/Temp/
+/Logs/
+/obj/
+/UserSettings/
+/Build/
+*.csproj
+*.sln
