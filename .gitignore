@@ -11,3 +11,5 @@
 /Build/
 *.csproj
 *.sln
+/Assets/ZS/Resources/ZSData/
+/Assets/ZS/Resources/ZSData.meta

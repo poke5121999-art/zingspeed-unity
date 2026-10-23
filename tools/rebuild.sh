@@ -19,3 +19,8 @@ VERSION=6000.3.18f1
   --root 'Scenes/StateScene/(Lobby_L|Lobby_L_Art|Podium)\.unity$' \
   --root 'vehicles/carparams/' \
   "$@"
+# Data the reconstructed gameplay reads (track line, car parameters) as JSON TextAssets.
+DATA="$HERE/Assets/ZS/Resources/ZSData"
+rm -rf "$DATA"
+"$KIT/.venv/bin/python" -m udk.sojson "$OUT/assets/ExportedProject" "$DATA/e_11citynew" 'environments/e_11citynew/model/pick/' --flat
+"$KIT/.venv/bin/python" -m udk.sojson "$OUT/assets/ExportedProject" "$DATA/carparams" 'vehicles/carparams/' --flat

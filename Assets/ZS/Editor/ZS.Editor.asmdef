@@ -1,0 +1,7 @@
+{
+    "name": "ZS.Editor",
+    "rootNamespace": "ZS.EditorTools",
+    "references": ["ZS"],
+    "includePlatforms": ["Editor"],
+    "autoReferenced": false
+}
