@@ -14,7 +14,7 @@ Mỗi luật trong `Assets/ZS/Scripts` thuộc một trong ba loại:
 | 2 vòng | Dữ liệu | `2_StandardData` (xe mẫu qua vạch 3 lần; cách bản web suy ra) |
 | Va chạm đường | Dữ liệu | Havok gốc `E_11CityNew_Pick_Track` (3182 tam giác mặt đường) và `Pick_Wall` (1950 tam giác tường), kit giải bằng `udk.havok`; mesh hình chỉ là dự phòng |
 | Drift: vào, giữ, trượt, thoát; yaw tối đa; mini boost; catch-up | Code gốc | `RULES_from_code.md` (decomp C# + `libNssPhysicsPlugin` native) |
-| Bot: ga, giới hạn tốc, tránh va xe, drift, boost, tự đặt lại vị trí | Dữ liệu (cấu trúc) + dựng lại (cách lái) | cây behaviac `SpeedModeAI`, `AiCar_DriftingState` (kit giải `.bson`); bot của bản này bám đường đua và theo cùng các nhánh đó |
+| Bot: ga, giới hạn tốc, tránh va xe, drift, boost, tự đặt lại vị trí | Dữ liệu (cấu trúc) + dựng lại (cách lái) | cây behaviac `SpeedModeAI`, `AiCar_DriftingState` (kit giải `.bson`); bot của bản này bám đường đua, drift, dùng boost và lùi ra khi kẹt; chưa có nhánh tránh va xe |
 | Tốc độ góc lái tối đa theo tốc độ | Dữ liệu | `CarSteer_00.m_drivingMaxAngSpeedCurve` (x = tốc độ / tốc độ tối đa) |
 | Lực kéo giảm khi gần tốc độ tối đa | Code gốc | `CarEngine_00.m_basePowerChainFactor` (1,0 → 0,2), x = tốc độ / tốc độ tối đa: `NssPhyVehiclePowerChain.c:2026` (`RULES_from_code.md` mục 2a) |
 | Drift góc lớn mất lực kéo | Code gốc | `CarEngine_00.m_powerChainFactorCurve` (50° → 1, 90° → 0,05), x = \|góc drift\|, chỉ khi đang drift: `_UpdatePowerChainFactor` (mục 2b) |
