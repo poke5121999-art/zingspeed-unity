@@ -53,6 +53,7 @@ namespace ZS
                 k.Visual = visual;
                 k.Gravity = track.Gravity;
                 k.Progress = k.LastProgress = track.Progress(go.transform.position, ref k.TrackHint);
+                k.Lap = k.Progress < track.Length * 0.5f ? 0 : -1;  // a grid slot past the line already is on lap 0
                 Karts.Add(k);
                 if (i > 0)
                 {

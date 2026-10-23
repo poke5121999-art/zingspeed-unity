@@ -25,6 +25,7 @@ namespace ZS.EditorTools
             Directory.CreateDirectory("Assets/ZS/Scenes");
             var scene = EditorSceneManager.OpenScene(TrackArt, OpenSceneMode.Single);
             int colliders = AddTrackColliders(scene);
+            int cleared = ClearRaceLine(Track.Load("e_11citynew", 1));
             var race = new GameObject("Race").AddComponent<Race>();
             race.KartVisuals = KartPrefabs();
             var camGo = new GameObject("ZS Camera");
@@ -33,10 +34,67 @@ namespace ZS.EditorTools
             camGo.AddComponent<ChaseCamera>();
             race.gameObject.AddComponent<RaceHud>();
             EditorSceneManager.SaveScene(scene, RaceScene, true);
-            Debug.Log($"[zs] race scene {RaceScene}: {colliders} mesh colliders added");
+            Debug.Log($"[zs] race scene {RaceScene}: {colliders} mesh colliders added, {cleared} wall triangles across the race line removed from colliders");
             BuildLobby();
             BuildPodium();
             EditorBuildSettings.scenes = new[] { LobbyScene, RaceScene, PodiumScene }.Select(p => new EditorBuildSettingsScene(p, true)).ToArray();
+        }
+
+        // The visual meshes include barriers the original's Havok collision (Pick_Wall) does not have on
+        // this route, some standing across the race line. The race line must be drivable, so wall-like
+        // triangles hit by rays along it (three lanes, kart height) leave the collider mesh; the drawn
+        // mesh is untouched.
+        public static int ClearRaceLine(Track track)
+        {
+            Physics.SyncTransforms();
+            var hits = new Dictionary<MeshCollider, List<Vector3>>();
+            int n = track.Pos.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var a = track.Pos[i];
+                var b = track.Pos[(i + 1) % n];
+                var right = Vector3.Cross(Vector3.up, track.Dir[i]).normalized;
+                foreach (float lane in new[] { -0.6f, 0f, 0.6f })
+                {
+                    var off = right * lane * (lane < 0 ? track.LeftWidth[i] : track.RightWidth[i]) + Vector3.up;
+                    var d = b - a;
+                    if (d.magnitude > 60f) continue;  // the closing jump of the loop
+                    foreach (var h in Physics.RaycastAll(a + off, d.normalized, d.magnitude, ~0, QueryTriggerInteraction.Ignore))
+                        if (h.collider is MeshCollider mc && Mathf.Abs(Vector3.Dot(h.normal, Vector3.up)) < 0.5f)
+                        {
+                            if (!hits.TryGetValue(mc, out var l)) hits[mc] = l = new List<Vector3>();
+                            l.Add(h.point);
+                        }
+                }
+            }
+            int removed = 0;
+            foreach (var kv in hits)
+            {
+                var mc = kv.Key;
+                var mesh = mc.sharedMesh;
+                var v = mesh.vertices;
+                var t = mesh.triangles;
+                var w = mc.transform.localToWorldMatrix;
+                var keep = new List<int>(t.Length);
+                for (int k = 0; k < t.Length; k += 3)
+                {
+                    Vector3 p0 = w.MultiplyPoint3x4(v[t[k]]), p1 = w.MultiplyPoint3x4(v[t[k + 1]]), p2 = w.MultiplyPoint3x4(v[t[k + 2]]);
+                    var c = (p0 + p1 + p2) / 3f;
+                    var nrm = Vector3.Cross(p1 - p0, p2 - p0).normalized;
+                    bool wall = Mathf.Abs(Vector3.Dot(nrm, Vector3.up)) < 0.5f;
+                    bool near = kv.Value.Any(h => new Vector2(h.x - c.x, h.z - c.z).sqrMagnitude < 9f && Mathf.Abs(h.y - c.y) < 3f);
+                    if (wall && near) { removed++; continue; }
+                    keep.Add(t[k]); keep.Add(t[k + 1]); keep.Add(t[k + 2]);
+                }
+                var copy = Object.Instantiate(mesh);
+                copy.name = mesh.name + "_drivable";
+                copy.triangles = keep.ToArray();
+                Directory.CreateDirectory("Assets/ZS/Generated");
+                AssetDatabase.CreateAsset(copy, $"Assets/ZS/Generated/{mc.name}_{mc.GetInstanceID() & 0xffff:x}_drivable.asset");
+                mc.sharedMesh = copy;
+                Debug.Log($"[zs] race line blocked by {mc.name} at {kv.Value.Count} rays; collider made drivable");
+            }
+            return removed;
         }
 
         static GameObject[] KartPrefabs() => Karts.Select(id => AssetDatabase.FindAssets($"HNCar_{id} t:Prefab")
@@ -150,7 +208,8 @@ namespace ZS.EditorTools
                     }
                     Physics.SyncTransforms();
                     if (Mathf.Repeat(t, 10f) < dt)
-                        log.Add($"t={t:F0}s " + string.Join(" ", race.Karts.Select(k => $"{k.name}:lap{k.Lap} {k.Progress:F0}m {k.Speed * 3.6f:F0}kmh")));
+                        log.Add($"t={t:F0}s " + string.Join(" ", race.Karts.Select(k => $"{k.name}:lap{k.Lap} {k.Progress:F0}m {k.Speed * 3.6f:F0}kmh" +
+                            (k.Speed < 3f ? $" stuck@{k.transform.position:F0} wall={k.LastWall} grounded={k.Grounded}" : ""))));
                 }
                 var standings = race.Standings();
                 foreach (var line in log) Debug.Log("[zs] " + line);

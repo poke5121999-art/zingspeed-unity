@@ -37,6 +37,9 @@ namespace ZS
         public float FinishTime = -1;
 
         float driftHeld, miniWindow, lastKmh, sinceFrontHit = 99f;
+        public string LastWall;        // collider of the last wall hit (smoke test diagnostics)
+        float offTrack;
+        int lastOnTrack;
 
         void FixedUpdate() => Step(Time.fixedDeltaTime);
 
@@ -56,7 +59,10 @@ namespace ZS
             // Steering: yaw rate from the steer curves by speed; drifting turns harder.
             float maxYaw = P.DrivingMaxAngSpeed.Evaluate(Mathf.Clamp01(kmh / P.TopKmh));  // curve x is speed / top
             float yaw = In.Steer * maxYaw * (Drifting ? P.DriftYawScale : 1f);
-            if (Speed > 0.5f) transform.Rotate(transform.up, yaw * dt, Space.World);
+            // Below walking pace the wheels still turn the kart while the pedal is down, so a kart
+            // stopped against a wall can steer away [reconstructed]; reversing turns the other way.
+            float turn = Mathf.Max(Mathf.Clamp01(Mathf.Abs(Speed) / 3f), In.Throttle != 0 ? 0.35f : 0f);
+            transform.Rotate(transform.up, yaw * turn * Mathf.Sign(Speed < -0.1f ? -1f : 1f) * dt, Space.World);
 
             // Drift: starts with the drift key while steering at speed; velocity lags the heading.
             bool wantDrift = In.Drift && Mathf.Abs(In.Steer) > 0.2f && kmh > P.DriftMinKmh;
@@ -109,7 +115,7 @@ namespace ZS
                           * (Drifting ? P.DriftPowerChain.Evaluate(DriftAngle) : 1f)
                           * P.WallPowerDump.Evaluate(sinceFrontHit);
             float accel = In.Throttle >= 0 ? In.Throttle * P.Accel * power : In.Throttle * P.Brake;
-            if (BoostTime > 0) accel += P.BoostAccel;
+            if (BoostTime > 0 && In.Throttle > 0) accel += P.BoostAccel;
             Speed += accel * dt;
             Speed -= (Drifting ? P.DriftDrag : P.Drag) * Speed * dt;
             Speed = Mathf.Clamp(Speed, -P.ReverseKmh / 3.6f, top / 3.6f);
@@ -117,16 +123,26 @@ namespace ZS
             Velocity = vdir * Speed;
             if (!Grounded) Velocity += Vector3.down * Gravity * dt;
             var step = Velocity * dt;
-            if (Physics.SphereCast(transform.position + transform.up * 0.7f, 0.6f, step.normalized, out var wall, step.magnitude, ~0, QueryTriggerInteraction.Ignore)
+            // Probe from 1.1 m with a 0.6 m radius: anything lower than ~0.5 m (kerbs, road seams) is climbed by
+            // the ground ray instead of stopping the kart, as the original's wheel physics does [reconstructed].
+            if (Physics.SphereCast(transform.position + transform.up * 1.1f, 0.6f, step.normalized, out var wall, step.magnitude, ~0, QueryTriggerInteraction.Ignore)
                 && Vector3.Dot(wall.normal, transform.up) < 0.5f)
             {
                 // Wall: keep a speed-dependent share along it (less for a head-on hit) and bounce off.
                 // The original classes the hit by angle (tail 85, side 105, head 150 degrees); head-on here
                 // means the wall faces the kart within 30 degrees [reconstructed].
                 bool front = Vector3.Angle(-wall.normal, step.normalized) < 30f;
-                Speed *= (front ? P.FrontWallTangKeep : P.WallTangKeep).Evaluate(kmh);
+                LastWall = wall.collider.name;
+                // A grazing contact (sliding along the wall) only slides; speed loss and the nose turn
+                // belong to an impact [reconstructed: the original's Havok contact does this].
+                bool impact = Vector3.Dot(step.normalized, -wall.normal) > 0.25f;
+                if (impact) Speed *= (front ? P.FrontWallTangKeep : P.WallTangKeep).Evaluate(kmh);
                 step = Vector3.ProjectOnPlane(step, wall.normal) + wall.normal * P.WallBounceKmh.Evaluate(kmh) / 3.6f * dt;
                 if (front) sinceFrontHit = 0;
+                // Turn the nose along the wall, as the original's bounce does (m_collideWallBouncedTime).
+                var along = Vector3.ProjectOnPlane(Vector3.ProjectOnPlane(transform.forward, wall.normal), transform.up);
+                if (impact && along.sqrMagnitude > 0.01f)
+                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(along, transform.up), 0.15f);
                 Drifting = false;
             }
             transform.position += step;
@@ -137,13 +153,21 @@ namespace ZS
                 Progress = Track.Progress(transform.position, ref TrackHint);
                 if (LastProgress > Track.Length * 0.8f && Progress < Track.Length * 0.2f) Lap++;
                 else if (LastProgress < Track.Length * 0.2f && Progress > Track.Length * 0.8f) Lap--;
-                if (transform.position.y < Track.Pos[TrackHint].y - 30f) Respawn();
+                // Off the road (beyond its width plus a verge) or airborne too long: the game puts the
+                // kart back on the line (CheckPointData.ResetType, ResetPointDataList) [reconstructed timing].
+                bool off = !Grounded || Track.Outside(transform.position, TrackHint) > 6f;
+                offTrack = off ? offTrack + dt : 0f;
+                if (!off) lastOnTrack = TrackHint;
+                if (offTrack > 1.5f || transform.position.y < Track.Pos[TrackHint].y - 30f) Respawn();
             }
         }
 
         public void Respawn()
         {
-            var r = Track.NearestReset(transform.position);
+            var r = Track.OnLine(lastOnTrack);
+            offTrack = 0f;
+            TrackHint = lastOnTrack;
+            Progress = LastProgress = Track.Dist[lastOnTrack];
             transform.SetPositionAndRotation(r.position + Vector3.up * 0.5f, r.rotation);
             Speed = 0;
             Velocity = Vector3.zero;

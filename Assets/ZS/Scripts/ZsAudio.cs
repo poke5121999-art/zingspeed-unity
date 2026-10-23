@@ -47,7 +47,7 @@ namespace ZS
             if (source == null)
             {
                 var go = new GameObject("ZS Audio");
-                Object.DontDestroyOnLoad(go);
+                if (Application.isPlaying) Object.DontDestroyOnLoad(go);  // throws outside play mode (editor smoke test)
                 source = go.AddComponent<AudioSource>();
             }
             source.PlayOneShot(list[Random.Range(0, list.Count)], volume);

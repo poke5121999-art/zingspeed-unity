@@ -5,7 +5,7 @@ namespace ZS
 {
     // The race line of one track, read from the game's own pick config (CheckPointConfig asset,
     // dumped to JSON by unity-decode-kit): TrackPointDataList (one point every ~10 m with left and
-    // right widths), CheckPointDataList (start/finish and gravity), ResetPointDataList (respawns).
+    // right widths; main curve only), CheckPointDataList (start/finish and gravity), ResetPointDataList (respawns).
     public class Track
     {
         public readonly List<Vector3> Pos = new List<Vector3>();
@@ -26,6 +26,9 @@ namespace ZS
             foreach (var o in Json.L(cfg["TrackPointDataList"]))
             {
                 var p = Json.D(o);
+                // CurveID 0 is the main loop; other curves are side branches (shortcuts) measured from
+                // their own start, which would break the distance order the race line relies on.
+                if (Json.I(p["CurveID"]) != 0) continue;
                 t.Pos.Add(V(p["Position"]));
                 t.Dir.Add(V(p["Direction"]).normalized);
                 t.Dist.Add(Json.F(p["TrackDistance"]));
@@ -77,6 +80,16 @@ namespace ZS
             float w = lateral >= 0 ? RightWidth[i] : LeftWidth[i];
             return Pos[i] + dir * (dist - Dist[i]) + right * lateral * w;
         }
+
+        // How far p is beside the race line at point i, against the road half-width on that side.
+        public float Outside(Vector3 p, int i)
+        {
+            Vector3 right = Vector3.Cross(Vector3.up, Dir[i]).normalized;
+            float side = Vector3.Dot(p - Pos[i], right);
+            return Mathf.Abs(side) - (side >= 0 ? RightWidth[i] : LeftWidth[i]);
+        }
+
+        public Pose OnLine(int i) => new Pose(Pos[i] + Vector3.up, Quaternion.LookRotation(Dir[i]));
 
         public Pose NearestReset(Vector3 p)
         {
