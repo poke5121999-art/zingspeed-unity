@@ -45,7 +45,8 @@ namespace ZS
                 Drift = Mathf.Abs(bend) > 28f && kart.Speed * 3.6f > kart.P.DriftMinKmh + 10f,
                 Nitro = Mathf.Abs(bend) < 8f && corner < 25f && throttle > 0f && (kart.NitroSlots > 0 || kart.BoostTime <= 0),
             };
-            float gap = Leader != null && Leader != kart ? (Leader.RaceDistance - kart.RaceDistance) / kart.Track.Length : 0f;
+            // Catch-up (FallBehindCompeMgr): x = distance behind the leader over the whole race length.
+            float gap = Leader != null && Leader != kart ? (Leader.RaceDistance - kart.RaceDistance) / (kart.Track.Length * kart.Track.Laps) : 0f;
             kart.CatchUpKmh = kart.P.FallBehindTopVel.Evaluate(Mathf.Max(0f, gap));
             kart.In = input;
         }

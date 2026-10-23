@@ -27,6 +27,10 @@ DATA="$HERE/Assets/ZS/Resources/ZSData"
 rm -rf "$DATA"
 "$KIT/.venv/bin/python" -m udk.sojson "$OUT/assets/ExportedProject" "$DATA/e_11citynew" 'environments/e_11citynew/model/pick/' --flat
 "$KIT/.venv/bin/python" -m udk.sojson "$OUT/assets/ExportedProject" "$DATA/carparams" 'vehicles/carparams/' --flat
+# The track's own collision (Havok, decoded by the kit) as OBJ text the editor turns into colliders.
+for part in Track Wall; do
+  "$KIT/.venv/bin/python" -m udk.havok "$DATA/e_11citynew/E_11CityNew_Pick_$part.asset.json" "$DATA/e_11citynew/E_11CityNew_Pick_$part.obj.txt" >/dev/null
+done
 # Original sounds the race uses (see Assets/ZS/Scripts/ZsAudio.cs for which event plays when).
 "$KIT/.venv/bin/python" -m udk.audiopick "$OUT" "$HERE/Assets/ZS/Resources/ZSAudio" \
   '^Play_Mode_Spray_UI_Countdown$' '^Play_Mode_RongLuTaoTai_SFX_(Nitro|BoostSurge)$' '^Play_Mode_GoldGrab_UI_Win$' \

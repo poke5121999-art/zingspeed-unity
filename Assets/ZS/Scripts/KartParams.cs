@@ -20,14 +20,18 @@ namespace ZS
         public float MiniBoostMinVDAngle = 35f;    // [data CarTurbo.m_miniBoostMinVDAngle]
         public float MiniBoostWindow = 1.4f;       // [data CarTurbo.m_miniBoostDelay]
         public float ReverseKmh = 106.39f;         // [data CarEngine.m_reverseTopKMPH]
-        public float DriftMinKmh = 45f;            // [data CarDrift.m_BrakeTimeEndGeneralDriftingMinMPH]
+        public float DriftMinKmh = 45f;            // [data CarDrift.m_BrakeTimeEndGeneralDriftingMinMPH] bots drift above it; no entry minimum in the original
 
         public float TopKmh = 196f;                // [reconstructed] server stat; CarDrift.m_driftHighKMPH_Curve spans 180-210 km/h
         public float Accel = 30f;                  // [reconstructed] m/s^2 at rest
         public float Brake = 40f;                  // [reconstructed]
         public float Drag = 0.08f;                 // [reconstructed]
         public float DriftDrag = 0.25f;            // [reconstructed]
-        public float DriftYawScale = 1.6f;         // [reconstructed]
+        public float DriftMaxYaw = 175f;           // deg/s while drifting (native NssSolveVehicleSteering)
+        public float SlideMaxYaw = 128f;           // deg/s x |steer| while sliding (DriftState_Sliding)
+        public float SlideReenterAngle = 50f;      // [data CarDrift.m_SlidingStateEnterContinuousDriftMinVdAngle]
+        public float MiniBoostMaxVDAngle = 50f;    // [data CarTurbo.m_miniBoostMaxVDAngle]
+        public AnimationCurve DriftForwardLerp;    // [data CarDrift.m_driftForwardExtraForceCurve] velocity-to-nose slerp rate by drift angle
         public float GripVelDirLerp = 12f;         // [reconstructed]
         public float NitroFull = 1000f;            // gauge units for one nitro (SingleNitrogenCollect)
         public float NitroMaxPerFrame = 100f;      // gain cap per 60 Hz physics frame (SingleNitrogenCollect.CalcCollectPower)
@@ -55,6 +59,9 @@ namespace ZS
             p.WallBounceKmh = ZsData.Curve(wall["m_fenceCollisionBounceKMPH"]);
             p.WallPowerDump = ZsData.Curve(wall["m_frontFenceCollisionPowerDumpCurve"]);
             p.SlidingVelDirLerp = ZsData.Curve(drift["m_slidingVelocityDirLerpCurve"]);
+            p.DriftForwardLerp = ZsData.Curve(drift["m_driftForwardExtraForceCurve"]);
+            p.SlideReenterAngle = Json.F(drift["m_SlidingStateEnterContinuousDriftMinVdAngle"]);
+            p.MiniBoostMaxVDAngle = Json.F(turbo["m_miniBoostMaxVDAngle"]);
             p.FallBehindTopVel = ZsData.Curve(engine["FallBehindCompeTopVelCurve"]);
             p.MiniBoostMinVDAngle = Json.F(turbo["m_miniBoostMinVDAngle"]);
             p.MiniBoostWindow = Json.F(turbo["m_miniBoostDelay"]);

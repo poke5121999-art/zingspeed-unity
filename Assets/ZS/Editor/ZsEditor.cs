@@ -24,7 +24,8 @@ namespace ZS.EditorTools
         {
             Directory.CreateDirectory("Assets/ZS/Scenes");
             var scene = EditorSceneManager.OpenScene(TrackArt, OpenSceneMode.Single);
-            int colliders = AddTrackColliders(scene);
+            int colliders = AddHavokColliders("e_11citynew", "E_11CityNew");
+            if (colliders == 0) colliders = AddTrackColliders(scene);
             int cleared = ClearRaceLine(Track.Load("e_11citynew", 1));
             var race = new GameObject("Race").AddComponent<Race>();
             race.KartVisuals = KartPrefabs();
@@ -158,8 +159,39 @@ namespace ZS.EditorTools
             main.farClipPlane = Mathf.Max(main.farClipPlane, 2000f);
         }
 
-        // The track's own collision is Havok data the client cannot read back; the visual meshes
-        // stand in for it.
+        // The track's own collision: Havok meshes (Pick_Track ground, Pick_Wall walls) decoded by the kit
+        // to OBJ text (tools/rebuild.sh). Shape space is Unity's world space, no axis flip.
+        public static int AddHavokColliders(string env, string prefix)
+        {
+            int n = 0;
+            Directory.CreateDirectory("Assets/ZS/Generated");
+            foreach (var part in new[] { "Track", "Wall" })
+            {
+                var text = Resources.Load<TextAsset>($"ZSData/{env}/{prefix}_Pick_{part}.obj");
+                if (text == null) continue;
+                var v = new List<Vector3>();
+                var t = new List<int>();
+                foreach (var line in text.text.Split('\n'))
+                {
+                    var f = line.Split(' ');
+                    if (f[0] == "v") v.Add(new Vector3(float.Parse(f[1], System.Globalization.CultureInfo.InvariantCulture),
+                        float.Parse(f[2], System.Globalization.CultureInfo.InvariantCulture), float.Parse(f[3], System.Globalization.CultureInfo.InvariantCulture)));
+                    else if (f[0] == "f") { t.Add(int.Parse(f[1]) - 1); t.Add(int.Parse(f[2]) - 1); t.Add(int.Parse(f[3]) - 1); }
+                }
+                var mesh = new Mesh { name = $"{prefix}_Pick_{part}", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+                mesh.SetVertices(v);
+                mesh.SetTriangles(t, 0);
+                mesh.RecalculateNormals();
+                AssetDatabase.CreateAsset(mesh, $"Assets/ZS/Generated/{prefix}_Pick_{part}.asset");
+                var go = new GameObject($"Havok {part}");
+                go.AddComponent<MeshCollider>().sharedMesh = mesh;
+                n++;
+                Debug.Log($"[zs] havok {part}: {v.Count} vertices, {t.Count / 3} triangles");
+            }
+            return n;
+        }
+
+        // Fallback without decoded Havok data: the visual meshes stand in for the collision.
         public static int AddTrackColliders(Scene scene)
         {
             int n = 0;
@@ -197,6 +229,7 @@ namespace ZS.EditorTools
                 race.Player.gameObject.AddComponent<Bot>().Leader = race.Player;  // autopilot for the player
                 const float dt = 0.02f;
                 var log = new List<string>();
+                var history = race.Karts.ToDictionary(k => k, k => new Queue<float>());
                 for (float t = 0; t < 900f && race.State != Race.Phase.Finished; t += dt)
                 {
                     race.Tick(dt);
@@ -207,6 +240,12 @@ namespace ZS.EditorTools
                         k.Step(dt);
                     }
                     Physics.SyncTransforms();
+                    if (Mathf.Repeat(t, 5f) < dt)
+                        foreach (var k in race.Karts)
+                        {
+                            history[k].Enqueue(k.RaceDistance);
+                            if (history[k].Count > 5) history[k].Dequeue();  // oldest is ~20-25 s ago
+                        }
                     if (Mathf.Repeat(t, 10f) < dt)
                         log.Add($"t={t:F0}s " + string.Join(" ", race.Karts.Select(k => $"{k.name}:lap{k.Lap} {k.Progress:F0}m {k.Speed * 3.6f:F0}kmh" +
                             (k.Speed < 3f ? $" stuck@{k.transform.position:F0} wall={k.LastWall} grounded={k.Grounded}" : ""))));
@@ -215,7 +254,10 @@ namespace ZS.EditorTools
                 foreach (var line in log) Debug.Log("[zs] " + line);
                 Debug.Log("[zs] result " + string.Join(", ", standings.Select((k, i) => $"{i + 1}. {k.name} {(k.FinishTime >= 0 ? k.FinishTime.ToString("F1") + "s" : "DNF")}")));
                 Debug.Log($"[zs] podium results {Session.Results.Count}: " + string.Join(", ", Session.Results.Select(r => $"{r.Name}/kart{r.Kart}")));
-                code = !race.Karts.All(k => k.FinishTime >= 0) ? 2 : Session.Results.Count != race.Karts.Count ? 3 : 0;
+                // A kart may miss the line only through the end-of-race timer, still driving: it must have
+                // covered 200 m in its last 20 s.
+                bool stuck = race.Karts.Any(k => k.FinishTime < 0 && k.RaceDistance - history[k].Peek() < 200f);
+                code = race.State != Race.Phase.Finished || stuck ? 2 : Session.Results.Count != race.Karts.Count ? 3 : 0;
             }
             catch (System.Exception e)
             {

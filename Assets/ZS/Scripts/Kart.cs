@@ -36,7 +36,11 @@ namespace ZS
         public int Lap = -1;           // first crossing of the start line starts lap 0
         public float FinishTime = -1;
 
-        float driftHeld, miniWindow, lastKmh, sinceFrontHit = 99f;
+        public enum DriftState { Grip, Drift, Slide }
+        public DriftState State;
+        float driftHeld, miniWindow, lastKmh, sinceFrontHit = 99f, peakAngle;
+        int driftDir;
+        bool miniArmed;
         public string LastWall;        // collider of the last wall hit (smoke test diagnostics)
         float offTrack;
         int lastOnTrack;
@@ -56,27 +60,43 @@ namespace ZS
                 transform.position = hit.point;
             }
 
-            // Steering: yaw rate from the steer curves by speed; drifting turns harder.
-            float maxYaw = P.DrivingMaxAngSpeed.Evaluate(Mathf.Clamp01(kmh / P.TopKmh));  // curve x is speed / top
-            float yaw = In.Steer * maxYaw * (Drifting ? P.DriftYawScale : 1f);
+            // Drift states (DriftStateMachine): the drift key with a steer direction enters a drift; it
+            // holds while the steer keeps that direction, key or not; letting go slides until the angle
+            // drops under 50 deg; steering that way again above 50 deg drifts again. No entry speed.
+            int steerDir = Mathf.Abs(In.Steer) > 0.2f ? (int)Mathf.Sign(In.Steer) : 0;
+            if (State == DriftState.Grip && In.Drift && steerDir != 0 && Speed > 1f)
+            {
+                State = DriftState.Drift; driftDir = steerDir; driftHeld = 0; peakAngle = 0; miniArmed = true;
+            }
+            else if (State == DriftState.Drift && steerDir != driftDir) State = DriftState.Slide;
+            else if (State == DriftState.Slide && steerDir == driftDir && DriftAngle > P.SlideReenterAngle) State = DriftState.Drift;
+            else if (State == DriftState.Slide && DriftAngle < P.SlideReenterAngle) State = DriftState.Grip;
+            Drifting = State != DriftState.Grip;
+
+            // Yaw cap: the steer curve by speed / top while gripping; 175 deg/s drifting; 128 x |steer| sliding.
+            float maxYaw = State == DriftState.Drift ? P.DriftMaxYaw : State == DriftState.Slide ? P.SlideMaxYaw
+                : P.DrivingMaxAngSpeed.Evaluate(Mathf.Clamp01(kmh / P.TopKmh));
+            float yaw = In.Steer * maxYaw;
             // Below walking pace the wheels still turn the kart while the pedal is down, so a kart
             // stopped against a wall can steer away [reconstructed]; reversing turns the other way.
             float turn = Mathf.Max(Mathf.Clamp01(Mathf.Abs(Speed) / 3f), In.Throttle != 0 ? 0.35f : 0f);
             transform.Rotate(transform.up, yaw * turn * Mathf.Sign(Speed < -0.1f ? -1f : 1f) * dt, Space.World);
 
-            // Drift: starts with the drift key while steering at speed; velocity lags the heading.
-            bool wantDrift = In.Drift && Mathf.Abs(In.Steer) > 0.2f && kmh > P.DriftMinKmh;
-            if (wantDrift && !Drifting) { Drifting = true; driftHeld = 0; }
-            if (Drifting && (!In.Drift || kmh < P.DriftMinKmh * 0.6f))
-            {
-                Drifting = false;
-                miniWindow = P.MiniBoostWindow;  // release: a nitro tap soon after gives a small boost
-            }
+            // Velocity direction slerps toward the nose: m_driftForwardExtraForceCurve(angle) while drifting,
+            // m_slidingVelocityDirLerpCurve(angle) while sliding (NssSolveVehicleDrifting_SlerpLinvel).
             Vector3 heading = transform.forward;
             Vector3 vdir = Velocity.sqrMagnitude > 0.01f ? Velocity.normalized : heading;
-            float lerp = Drifting ? P.SlidingVelDirLerp.Evaluate(DriftAngle) : P.GripVelDirLerp;
+            float lerp = State == DriftState.Drift ? P.DriftForwardLerp.Evaluate(DriftAngle)
+                : State == DriftState.Slide ? P.SlidingVelDirLerp.Evaluate(DriftAngle) : P.GripVelDirLerp;
             vdir = Vector3.Slerp(vdir, heading, Mathf.Clamp01(lerp * dt));
             DriftAngle = Vector3.Angle(vdir, heading);
+            // Mini boost window (EvtMini): once the drift peaked above 35 deg and the angle falls under 50 deg.
+            if (Drifting) peakAngle = Mathf.Max(peakAngle, DriftAngle);
+            if (Drifting && miniArmed && peakAngle > P.MiniBoostMinVDAngle && DriftAngle < P.MiniBoostMaxVDAngle && driftHeld > 0.1f)
+            {
+                miniWindow = P.MiniBoostWindow;
+                miniArmed = false;
+            }
             if (Drifting)
             {
                 // Charged by the speed the drift costs, with a floor while the drift holds; capped per 60 Hz frame.
@@ -143,7 +163,7 @@ namespace ZS
                 var along = Vector3.ProjectOnPlane(Vector3.ProjectOnPlane(transform.forward, wall.normal), transform.up);
                 if (impact && along.sqrMagnitude > 0.01f)
                     transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(along, transform.up), 0.15f);
-                Drifting = false;
+                State = DriftState.Grip; Drifting = false;
             }
             transform.position += step;
 
@@ -171,7 +191,7 @@ namespace ZS
             transform.SetPositionAndRotation(r.position + Vector3.up * 0.5f, r.rotation);
             Speed = 0;
             Velocity = Vector3.zero;
-            Drifting = false;
+            State = DriftState.Grip; Drifting = false;
         }
 
         public float RaceDistance => Lap * Track.Length + Progress;
