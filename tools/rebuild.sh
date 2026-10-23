@@ -18,6 +18,8 @@ VERSION=6000.3.18f1
   --root 'environments/e_11citynew/model/pick/' \
   --root 'Scenes/StateScene/(Lobby_L|Lobby_L_Art|Podium)\.unity$' \
   --root 'vehicles/carparams/' \
+  --root 'vehicles/car/(00004|00006|00297|00016|00175|00284)/.*/HNCar_[0-9]+\.prefab$' \
+  --root 'id_car/01ncarshow/NCar_(00004|00006|00297|00016|00175|00284)_Splited\.png$' \
   "$@"
 # Data the reconstructed gameplay reads (track line, car parameters) as JSON TextAssets.
 DATA="$HERE/Assets/ZS/Resources/ZSData"

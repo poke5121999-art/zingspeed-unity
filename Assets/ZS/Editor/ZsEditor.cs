@@ -14,6 +14,8 @@ namespace ZS.EditorTools
     {
         public const string TrackArt = "Assets/ResForAssetBundles/Scenes/Preview/LevelScene/Level_11CityNew_Art.unity";
         public const string RaceScene = "Assets/ZS/Scenes/Race_11CityNew.unity";
+        // The six karts whose full model (HNCar prefab) ships in the APK; the rest download after install.
+        public static readonly string[] Karts = { "00004", "00006", "00297", "00016", "00175", "00284" };
 
         [MenuItem("ZS/Build scenes")]
         public static void BuildScenes()
@@ -22,6 +24,9 @@ namespace ZS.EditorTools
             var scene = EditorSceneManager.OpenScene(TrackArt, OpenSceneMode.Single);
             int colliders = AddTrackColliders(scene);
             var race = new GameObject("Race").AddComponent<Race>();
+            race.KartVisuals = Karts.Select(id => AssetDatabase.FindAssets($"HNCar_{id} t:Prefab")
+                    .Select(AssetDatabase.GUIDToAssetPath).FirstOrDefault(p => p.EndsWith($"/HNCar_{id}.prefab")))
+                .Where(p => p != null).Select(AssetDatabase.LoadAssetAtPath<GameObject>).ToArray();
             var camGo = new GameObject("ZS Camera");
             camGo.AddComponent<Camera>().farClipPlane = 3000f;
             camGo.AddComponent<AudioListener>();
